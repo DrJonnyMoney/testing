@@ -7,9 +7,9 @@ USER root
 # Install NGINX
 RUN apt-get update && apt-get install -y nginx && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Configure NGINX to serve on port 8080 instead of 8888 to avoid conflicts
+# Configure NGINX to serve on port 8888 (same as code-server used)
 RUN echo "server { \
-    listen 8080; \
+    listen 8888; \
     server_name localhost; \
     location / { \
         root /usr/share/nginx/html; \
@@ -22,6 +22,9 @@ RUN echo "server { \
 # Copy your web app files
 COPY . /usr/share/nginx/html
 
+# Remove the code-server service
+RUN rm -rf /etc/services.d/code-server
+
 # Create the nginx service in the correct location
 RUN mkdir -p /etc/services.d/nginx
 
@@ -31,8 +34,8 @@ nginx -g "daemon off;"\n\
 ' > /etc/services.d/nginx/run \
 && chmod +x /etc/services.d/nginx/run
 
-# Expose both ports
-EXPOSE 8888 8080
+# Expose port 8888 (same as what code-server was using)
+EXPOSE 8888
 
 # Switch back to non-root user
 USER $NB_UID
