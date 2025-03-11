@@ -25,14 +25,13 @@ COPY . /usr/share/nginx/html
 # Remove the code-server service
 RUN rm -rf /etc/services.d/code-server
 
-# Create the nginx service in the correct location
-RUN mkdir -p /etc/services.d/nginx
+# Make sure nginx service is defined in multiple possible locations
+RUN mkdir -p /etc/services.d/nginx /run/s6/legacy-services/nginx
 
-# Create the run script with the correct format
-RUN echo '#!/bin/execlineb -P\n\
-nginx -g "daemon off;"\n\
-' > /etc/services.d/nginx/run \
-&& chmod +x /etc/services.d/nginx/run
+# Create run script in both locations (belt and suspenders approach)
+RUN echo '#!/bin/execlineb -P\nnginx -g "daemon off;"' > /etc/services.d/nginx/run && \
+    chmod +x /etc/services.d/nginx/run && \
+    cp /etc/services.d/nginx/run /run/s6/legacy-services/nginx/run
 
 # Expose port 8888 (same as what code-server was using)
 EXPOSE 8888
