@@ -7,10 +7,6 @@ USER root
 # Install NGINX
 RUN apt-get update && apt-get install -y nginx && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create custom directories for nginx to use with correct permissions
-RUN mkdir -p /home/jovyan/nginx/logs /home/jovyan/nginx/run /home/jovyan/nginx/cache/proxy /home/jovyan/nginx/cache/fastcgi /home/jovyan/nginx/cache/uwsgi /home/jovyan/nginx/cache/scgi /home/jovyan/nginx/body && \
-    chown -R ${NB_USER}:${NB_GID} /home/jovyan/nginx
-
 # Copy the nginx configuration file
 COPY nginx.conf /etc/nginx/nginx.conf
 
@@ -18,13 +14,17 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY . /usr/share/nginx/html
 RUN chown -R ${NB_USER}:${NB_GID} /usr/share/nginx/html
 
-# Remove the code-server service to prevent it from starting
-RUN rm -f /etc/services.d/code-server/run
+# Create an initialization script that will run before services start
+RUN mkdir -p /etc/cont-init.d && \
+    echo '#!/bin/bash' > /etc/cont-init.d/02-setup-nginx && \
+    echo 'mkdir -p /home/jovyan/nginx/logs /home/jovyan/nginx/run /home/jovyan/nginx/cache/proxy /home/jovyan/nginx/cache/fastcgi /home/jovyan/nginx/cache/uwsgi /home/jovyan/nginx/cache/scgi /home/jovyan/nginx/body' >> /etc/cont-init.d/02-setup-nginx && \
+    echo 'chown -R ${NB_USER}:${NB_GID} /home/jovyan/nginx' >> /etc/cont-init.d/02-setup-nginx && \
+    chmod 755 /etc/cont-init.d/02-setup-nginx
 
 # Create nginx service directory
 RUN mkdir -p /etc/services.d/nginx
 
-# Copy the nginx run script
+# Copy the nginx run script 
 COPY nginx-run /etc/services.d/nginx/run
 
 # Set proper permissions for the run script
