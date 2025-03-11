@@ -22,16 +22,16 @@ RUN echo "server { \
 # Copy your web app files
 COPY . /usr/share/nginx/html
 
-# Set up NGINX as a service in the correct s6-overlay location
-RUN mkdir -p /etc/services.d/nginx
+# Create necessary directories if they don't exist
+RUN mkdir -p /usr/share/nginx/html
 
-# Create the run script with proper format for s6-overlay
-RUN echo '#!/usr/bin/with-contenv bash\nexec nginx -g "daemon off;"' > /etc/services.d/nginx/run \
-    && chmod +x /etc/services.d/nginx/run
+# Set up NGINX as a service in the CORRECT s6-overlay location for legacy version
+# This is the key fix - using the legacy path that matches the logs
+RUN mkdir -p /etc/service/nginx
 
-# Create a finish script to ensure proper shutdown
-RUN echo '#!/usr/bin/with-contenv bash\nkill -TERM $(cat /var/run/nginx.pid)' > /etc/services.d/nginx/finish \
-    && chmod +x /etc/services.d/nginx/finish
+# Create the run script with proper format for s6-overlay legacy version
+RUN echo '#!/bin/bash\nexec nginx -g "daemon off;"' > /etc/service/nginx/run \
+    && chmod +x /etc/service/nginx/run
 
 # Expose both ports - 8888 for code-server and 8080 for nginx
 EXPOSE 8888 8080
