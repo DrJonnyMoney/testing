@@ -28,5 +28,4 @@ EXPOSE 8888
 USER $NB_UID
 
 # Use the built-in s6-overlay entrypoint
-ENTRYPOINT ["/init"]
-~                                
+ENTRYPOINT ["/init"]                             
