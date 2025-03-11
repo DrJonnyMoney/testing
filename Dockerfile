@@ -5,8 +5,7 @@ FROM kubeflownotebookswg/codeserver:latest
 USER root
 
 # Install NGINX
-RUN apt-get update && apt-get install -y nginx && apt-get clean && rm -rf /var/ll
-ib/apt/lists/*
+RUN apt-get update && apt-get install -y nginx && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Remove the built-in code-server service to avoid port conflict on 8888
 RUN rm -rf /etc/s6/services.d/codeserver
