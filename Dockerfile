@@ -27,11 +27,9 @@ RUN rm -f /etc/services.d/code-server/run
 
 # Create nginx run script with the EXACT same shebang as the code-server script
 RUN mkdir -p /etc/services.d/nginx && \
-    cat > /etc/services.d/nginx/run << 'EOF'
-#!/command/with-contenv bash
-exec 2>&1
-exec nginx -g "daemon off;"
-EOF
+    echo '#!/command/with-contenv bash' > /etc/services.d/nginx/run && \
+    echo 'exec 2>&1' >> /etc/services.d/nginx/run && \
+    echo 'exec nginx -g "daemon off;"' >> /etc/services.d/nginx/run
 
 # Make sure the script is executable with the right permissions
 RUN chmod 755 /etc/services.d/nginx/run && \
