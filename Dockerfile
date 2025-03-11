@@ -7,19 +7,9 @@ USER root
 # Install NGINX
 RUN apt-get update && apt-get install -y nginx && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Remove the built-in code-server service to avoid port conflict on 8888
-# Make sure directory exists before removing
-RUN if [ -d "/etc/s6/services.d/codeserver" ]; then rm -rf /etc/s6/services.d/codeserver; fi
-
-# Copy your web app files
-COPY . /usr/share/nginx/html
-
-# Make sure the directory exists
-RUN mkdir -p /usr/share/nginx/html
-
-# Configure NGINX to serve on port 8888
+# Configure NGINX to serve on a DIFFERENT port (8080) to avoid conflicts with code-server on 8888
 RUN echo "server { \
-    listen 8888; \
+    listen 8080; \
     server_name localhost; \
     location / { \
         root /usr/share/nginx/html; \
@@ -29,18 +19,25 @@ RUN echo "server { \
 }" > /etc/nginx/sites-available/default \
 && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Set up NGINX as a service in s6-overlay
-RUN mkdir -p /etc/s6/services.d/nginx
+# Copy your web app files
+COPY . /usr/share/nginx/html
 
-# Create the run script directly instead of copying
-RUN echo '#!/bin/sh\nexec nginx -g "daemon off;"' > /etc/s6/services.d/nginx/run \
-    && chmod +x /etc/s6/services.d/nginx/run
+# Set up NGINX as a service in the correct s6-overlay location
+RUN mkdir -p /etc/services.d/nginx
 
-# Expose port 8888
-EXPOSE 8888
+# Create the run script with proper format for s6-overlay
+RUN echo '#!/usr/bin/with-contenv bash\nexec nginx -g "daemon off;"' > /etc/services.d/nginx/run \
+    && chmod +x /etc/services.d/nginx/run
 
-# Switch back to non-root user (NB_UID is set in the base image)
+# Create a finish script to ensure proper shutdown
+RUN echo '#!/usr/bin/with-contenv bash\nkill -TERM $(cat /var/run/nginx.pid)' > /etc/services.d/nginx/finish \
+    && chmod +x /etc/services.d/nginx/finish
+
+# Expose both ports - 8888 for code-server and 8080 for nginx
+EXPOSE 8888 8080
+
+# Switch back to non-root user
 USER $NB_UID
 
-# Use the built-in s6-overlay entrypoint - keep as array format
+# Keep the original entrypoint
 ENTRYPOINT ["/init"]
